@@ -1,4 +1,5 @@
 import type { Mode, Category } from '../utils/letters';
+import { useLanguage } from '../hooks/useLanguage';
 
 interface ModeSelectionProps {
   category: Category;
@@ -7,14 +8,18 @@ interface ModeSelectionProps {
 }
 
 export function ModeSelection({ category, onStart, onBack }: ModeSelectionProps) {
-  const categoryLabel = category === 'letters' ? 'letras' : 'números';
-  const sequenceLabel = category === 'letters' ? '🔤 Alfabeto' : '🔢 Sequência';
+  const { t } = useLanguage();
+  
+  const categoryLabel = category === 'letters' ? t('letters').toLowerCase() : t('numbers').toLowerCase();
+  const sequenceLabel = category === 'letters' 
+    ? `🔤 ${t('alphabet')}` 
+    : `🔢 ${t('sequence')}`;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
-      <h1 className="text-5xl font-bold text-purple-800 mb-4">Escrevendo</h1>
+      <h1 className="text-5xl font-bold text-purple-800 mb-4">{t('appName')}</h1>
       <p className="text-xl text-purple-600 mb-12">
-        Como você quer praticar as {categoryLabel}?
+        {t('howToPractice')} ({categoryLabel})
       </p>
 
       <div className="flex flex-col gap-6 w-full max-w-sm">
@@ -29,7 +34,7 @@ export function ModeSelection({ category, onStart, onBack }: ModeSelectionProps)
           onClick={() => onStart('random')}
           className="bg-pastel-yellow hover:bg-pastel-pink text-gray-700 font-semibold py-6 px-8 rounded-2xl text-2xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
         >
-          🎲 Aleatório
+          🎲 {t('random')}
         </button>
       </div>
 
@@ -37,7 +42,7 @@ export function ModeSelection({ category, onStart, onBack }: ModeSelectionProps)
         onClick={onBack}
         className="mt-12 text-purple-500 hover:text-purple-700 text-lg underline transition-colors"
       >
-        ← Voltar
+        ← {t('back')}
       </button>
     </div>
   );

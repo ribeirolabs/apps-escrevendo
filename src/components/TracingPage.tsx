@@ -1,11 +1,13 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import type { Mode, LetterCase, Category } from '../utils/letters';
+import type { Language } from '../utils/translations';
 import { TracingCanvas } from './TracingCanvas';
 import { Controls } from './Controls';
 import { ColorPicker } from './ColorPicker';
 import { useTracing } from '../hooks/useTracing';
+import { useLanguage } from '../hooks/useLanguage';
 
-function useSpeech() {
+function useSpeech(lang: Language) {
   const synth = useRef<SpeechSynthesis | null>(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -20,7 +22,7 @@ function useSpeech() {
     synth.current.cancel();
     
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'pt-BR';
+    utterance.lang = lang;
     utterance.rate = 0.8;
     
     utterance.onstart = () => setIsSpeaking(true);
@@ -28,7 +30,7 @@ function useSpeech() {
     utterance.onerror = () => setIsSpeaking(false);
     
     synth.current.speak(utterance);
-  }, []);
+  }, [lang]);
 
   return { speak, isSpeaking };
 }
@@ -45,7 +47,8 @@ interface TracingPageProps {
 export function TracingPage({ category, mode, initialCase, onBack, onCaseChange, word }: TracingPageProps) {
   const [strokeColor, setStrokeColor] = useState('#9b87f5');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { speak, isSpeaking } = useSpeech();
+  const { lang, t } = useLanguage();
+  const { speak, isSpeaking } = useSpeech(lang);
 
   const {
     currentCharacter,
@@ -106,7 +109,7 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange,
           onClick={onBack}
           className="bg-pastel-pink hover:bg-pastel-purple text-gray-700 font-semibold py-2 px-4 rounded-xl text-lg shadow transition-all duration-200"
         >
-          ← Voltar
+          ← {t('back')}
         </button>
 
         <Controls
@@ -122,7 +125,7 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange,
         <button
           onClick={toggleFullscreen}
           className="bg-pastel-purple hover:bg-purple-200 text-gray-700 font-semibold py-2 px-4 rounded-xl shadow transition-all duration-200"
-          title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+          title={isFullscreen ? t('exitFullscreen') : t('fullscreen')}
         >
           {isFullscreen ? '⊠' : '⛶'}
         </button>
