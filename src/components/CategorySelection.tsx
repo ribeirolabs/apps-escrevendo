@@ -8,7 +8,7 @@ export function CategorySelection({ onSelect }: CategorySelectionProps) {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8">
       <img 
-        src="/icon.png" 
+        src={`${import.meta.env.BASE_URL}icon.png`}
         alt="Escrevendo" 
         className="w-32 h-32 mb-4 rounded-3xl shadow-lg"
       />
