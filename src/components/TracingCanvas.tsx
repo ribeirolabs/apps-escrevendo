@@ -5,9 +5,11 @@ interface TracingCanvasProps {
   character: string;
   clearTrigger?: number;
   strokeColor?: string;
+  showBothCases?: boolean;
 }
 
 const CANVAS_WIDTH = 400;
+const CANVAS_WIDTH_BOTH = 700;
 const CANVAS_HEIGHT = 500;
 
 // Guidelines positions (as percentage of height)
@@ -20,9 +22,11 @@ const GUIDELINE_COLOR = '#d4c4f5';
 const GUIDELINE_DASHED_COLOR = '#e8dff5';
 const LETTER_DOTTED_COLOR = '#c4b5e8';
 
-export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5' }: TracingCanvasProps) {
+export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5', showBothCases = false }: TracingCanvasProps) {
   const guideCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
+  
+  const canvasWidth = showBothCases ? CANVAS_WIDTH_BOTH : CANVAS_WIDTH;
 
   const { clearCanvas } = useDrawing(drawCanvasRef, {
     strokeColor,
@@ -38,8 +42,7 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
   }, []);
 
   // Draw guidelines
-  const drawGuidelines = useCallback((ctx: CanvasRenderingContext2D) => {
-    const width = CANVAS_WIDTH;
+  const drawGuidelines = useCallback((ctx: CanvasRenderingContext2D, width: number) => {
     const height = CANVAS_HEIGHT;
 
     ctx.clearRect(0, 0, width, height);
@@ -73,23 +76,45 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
   }, []);
 
   // Draw dotted letter outline
-  const drawDottedLetter = useCallback((ctx: CanvasRenderingContext2D, char: string) => {
-    const width = CANVAS_WIDTH;
+  const drawDottedLetter = useCallback((ctx: CanvasRenderingContext2D, char: string, showBoth: boolean, width: number) => {
     const { fontSize, centerY } = getFontSettings();
 
     ctx.font = `bold ${fontSize}px Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    // Draw dotted outline
-    ctx.strokeStyle = LETTER_DOTTED_COLOR;
-    ctx.lineWidth = 3;
-    ctx.setLineDash([8, 10]);
-    ctx.strokeText(char, width / 2, centerY);
+    if (showBoth) {
+      // Draw both cases side by side with same font size
+      const upperChar = char.toUpperCase();
+      const lowerChar = char.toLowerCase();
+      const spacing = width / 4;
+      
+      // Draw uppercase on the left
+      ctx.strokeStyle = LETTER_DOTTED_COLOR;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 10]);
+      ctx.strokeText(upperChar, width / 2 - spacing, centerY);
+      ctx.fillStyle = 'rgba(228, 218, 245, 0.25)';
+      ctx.fillText(upperChar, width / 2 - spacing, centerY);
+      
+      // Draw lowercase on the right
+      ctx.strokeStyle = LETTER_DOTTED_COLOR;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 10]);
+      ctx.strokeText(lowerChar, width / 2 + spacing, centerY);
+      ctx.fillStyle = 'rgba(228, 218, 245, 0.25)';
+      ctx.fillText(lowerChar, width / 2 + spacing, centerY);
+    } else {
+      // Draw single character centered
+      ctx.strokeStyle = LETTER_DOTTED_COLOR;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 10]);
+      ctx.strokeText(char, width / 2, centerY);
 
-    // Draw light fill for better visibility
-    ctx.fillStyle = 'rgba(228, 218, 245, 0.25)';
-    ctx.fillText(char, width / 2, centerY);
+      // Draw light fill for better visibility
+      ctx.fillStyle = 'rgba(228, 218, 245, 0.25)';
+      ctx.fillText(char, width / 2, centerY);
+    }
   }, [getFontSettings]);
 
   // Initial render of guidelines and letter
@@ -98,10 +123,10 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
     const guideCtx = guideCanvas?.getContext('2d');
     
     if (guideCtx) {
-      drawGuidelines(guideCtx);
-      drawDottedLetter(guideCtx, character);
+      drawGuidelines(guideCtx, canvasWidth);
+      drawDottedLetter(guideCtx, character, showBothCases, canvasWidth);
     }
-  }, [character, drawGuidelines, drawDottedLetter]);
+  }, [character, showBothCases, canvasWidth, drawGuidelines, drawDottedLetter]);
 
   // Clear drawing canvas when clearTrigger changes or character changes
   useEffect(() => {
@@ -110,7 +135,7 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
 
   return (
     <div 
-      className="relative bg-white rounded-3xl shadow-lg overflow-hidden ring-2 ring-purple-200"
+      className="relative bg-white rounded-3xl shadow-lg overflow-hidden ring-2 ring-purple-200 transition-all duration-300"
       style={{ touchAction: 'none' }}
       onTouchStart={(e) => e.preventDefault()}
       onTouchMove={(e) => e.preventDefault()}
@@ -118,7 +143,7 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
       {/* Guidelines and letter template layer */}
       <canvas
         ref={guideCanvasRef}
-        width={CANVAS_WIDTH}
+        width={canvasWidth}
         height={CANVAS_HEIGHT}
         className="absolute inset-0 w-full h-full"
         style={{ touchAction: 'none' }}
@@ -127,7 +152,7 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
       {/* Drawing layer */}
       <canvas
         ref={drawCanvasRef}
-        width={CANVAS_WIDTH}
+        width={canvasWidth}
         height={CANVAS_HEIGHT}
         className="relative w-full h-full cursor-crosshair"
         style={{ touchAction: 'none' }}

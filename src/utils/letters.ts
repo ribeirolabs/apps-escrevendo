@@ -2,13 +2,16 @@ export const ALPHABET_UPPERCASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 export const ALPHABET_LOWERCASE = 'abcdefghijklmnopqrstuvwxyz'.split('');
 export const NUMBERS = '0123456789'.split('');
 
-export type LetterCase = 'uppercase' | 'lowercase';
+export type LetterCase = 'uppercase' | 'lowercase' | 'both';
 export type Mode = 'sequence' | 'random';
 export type Category = 'letters' | 'numbers';
 
 export function getCharacters(category: Category, letterCase: LetterCase): string[] {
   if (category === 'numbers') {
     return NUMBERS;
+  }
+  if (letterCase === 'both') {
+    return ALPHABET_UPPERCASE; // We use uppercase as the base, will show both in UI
   }
   return letterCase === 'uppercase' ? ALPHABET_UPPERCASE : ALPHABET_LOWERCASE;
 }

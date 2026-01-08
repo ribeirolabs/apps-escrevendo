@@ -41,10 +41,11 @@ export function useTracing({ category, mode, initialCase }: UseTracingOptions) {
 
   const handleToggleCase = useCallback(() => {
     setLetterCase((prev) => {
-      const newCase = prev === 'uppercase' ? 'lowercase' : 'uppercase';
-      // Update character to match new case
+      // Cycle: uppercase -> lowercase -> both -> uppercase
+      const newCase = prev === 'uppercase' ? 'lowercase' : prev === 'lowercase' ? 'both' : 'uppercase';
+      // Update character to match new case (for 'both' we use uppercase as base)
       setCurrentCharacter((char) =>
-        newCase === 'uppercase' ? char.toUpperCase() : char.toLowerCase()
+        newCase === 'lowercase' ? char.toLowerCase() : char.toUpperCase()
       );
       return newCase;
     });

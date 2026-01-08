@@ -129,6 +129,7 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange 
           character={currentCharacter}
           clearTrigger={clearTrigger}
           strokeColor={strokeColor}
+          showBothCases={letterCase === 'both'}
         />
       </div>
       

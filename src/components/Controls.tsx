@@ -44,9 +44,9 @@ export function Controls({
         <button
           onClick={onToggleCase}
           className="bg-pastel-blue hover:bg-blue-200 text-gray-700 font-bold py-4 px-5 rounded-2xl shadow-md text-2xl transition-all duration-200 hover:scale-105 active:scale-95"
-          title={letterCase === 'uppercase' ? 'Minúsculas' : 'Maiúsculas'}
+          title={letterCase === 'uppercase' ? 'Minúsculas' : letterCase === 'lowercase' ? 'Ambas' : 'Maiúsculas'}
         >
-          {letterCase === 'uppercase' ? 'Aa' : 'AA'}
+          {letterCase === 'uppercase' ? 'AA' : letterCase === 'lowercase' ? 'aa' : 'Aa'}
         </button>
       )}
 

@@ -34,7 +34,7 @@ function parseHash(): RouteState {
   let letterCase: LetterCase = 'uppercase';
   if (parts.length >= 3 && category === 'letters') {
     const caseParam = parts[2];
-    if (caseParam === 'lowercase' || caseParam === 'uppercase') {
+    if (caseParam === 'lowercase' || caseParam === 'uppercase' || caseParam === 'both') {
       letterCase = caseParam;
     }
   }
