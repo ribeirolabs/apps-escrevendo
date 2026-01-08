@@ -1,9 +1,37 @@
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import type { Mode, LetterCase, Category } from '../utils/letters';
 import { TracingCanvas } from './TracingCanvas';
 import { Controls } from './Controls';
 import { ColorPicker } from './ColorPicker';
 import { useTracing } from '../hooks/useTracing';
+
+function useSpeech() {
+  const synth = useRef<SpeechSynthesis | null>(null);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+
+  useEffect(() => {
+    synth.current = window.speechSynthesis;
+  }, []);
+
+  const speak = useCallback((text: string) => {
+    if (!synth.current) return;
+    
+    // Cancel any ongoing speech
+    synth.current.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 0.8;
+    
+    utterance.onstart = () => setIsSpeaking(true);
+    utterance.onend = () => setIsSpeaking(false);
+    utterance.onerror = () => setIsSpeaking(false);
+    
+    synth.current.speak(utterance);
+  }, []);
+
+  return { speak, isSpeaking };
+}
 
 interface TracingPageProps {
   category: Category;
@@ -16,6 +44,7 @@ interface TracingPageProps {
 export function TracingPage({ category, mode, initialCase, onBack, onCaseChange }: TracingPageProps) {
   const [strokeColor, setStrokeColor] = useState('#9b87f5');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { speak, isSpeaking } = useSpeech();
 
   const {
     currentCharacter,
@@ -56,10 +85,18 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange 
     }
   }, []);
 
+  const handleListen = useCallback(() => {
+    // For letters, just speak the lowercase version to avoid "M maiúsculo"
+    const textToSpeak = category === 'letters' 
+      ? currentCharacter.toLowerCase() 
+      : currentCharacter;
+    speak(textToSpeak);
+  }, [speak, currentCharacter, category]);
+
   return (
-    <div className="flex flex-col h-screen p-4 overflow-hidden">
+    <div className="flex flex-col h-screen p-4 pt-safe overflow-hidden">
       {/* Header with back button and controls */}
-      <header className="flex items-center justify-between">
+      <header className="flex items-center justify-between mt-6">
         <button
           onClick={onBack}
           className="bg-pastel-pink hover:bg-pastel-purple text-gray-700 font-semibold py-2 px-4 rounded-xl text-lg shadow transition-all duration-200"
@@ -73,6 +110,8 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange 
           onClear={handleClearDrawing}
           onNext={handleNextCharacter}
           onToggleCase={handleToggleCase}
+          onListen={handleListen}
+          isSpeaking={isSpeaking}
         />
 
         <button
@@ -94,7 +133,7 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange 
       </div>
       
       {/* Color picker pinned to bottom */}
-      <div className="flex justify-center pb-2">
+      <div className="flex justify-center pb-safe">
         <ColorPicker
           selectedColor={strokeColor}
           onColorChange={setStrokeColor}
