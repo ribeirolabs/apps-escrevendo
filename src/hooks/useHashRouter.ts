@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Category, Mode, LetterCase } from '../utils/letters';
 
 export interface RouteState {
-  screen: 'category' | 'mode' | 'tracing';
+  screen: 'category' | 'mode' | 'tracing' | 'wordInput';
   category?: Category;
   mode?: Mode;
   letterCase?: LetterCase;
+  word?: string;
 }
 
 function parseHash(): RouteState {
@@ -14,6 +15,16 @@ function parseHash(): RouteState {
 
   if (parts.length === 0) {
     return { screen: 'category' };
+  }
+
+  // Handle words category
+  if (parts[0] === 'words') {
+    if (parts.length === 1) {
+      return { screen: 'wordInput' };
+    }
+    // words/WORD format
+    const word = decodeURIComponent(parts[1]);
+    return { screen: 'tracing', category: 'words', mode: 'sequence', word };
   }
 
   const category = parts[0] as Category;
@@ -47,11 +58,18 @@ function buildHash(state: RouteState): string {
     return '#/';
   }
 
+  if (state.screen === 'wordInput') {
+    return '#/words';
+  }
+
   if (state.screen === 'mode' && state.category) {
     return `#/${state.category}`;
   }
 
   if (state.screen === 'tracing' && state.category && state.mode) {
+    if (state.category === 'words' && state.word) {
+      return `#/words/${encodeURIComponent(state.word)}`;
+    }
     if (state.category === 'letters' && state.letterCase) {
       return `#/${state.category}/${state.mode}/${state.letterCase}`;
     }
@@ -94,6 +112,14 @@ export function useHashRouter() {
     navigate({ screen: 'tracing', category, mode, letterCase });
   }, [navigate]);
 
+  const goToWordInput = useCallback(() => {
+    navigate({ screen: 'wordInput' });
+  }, [navigate]);
+
+  const goToWordTracing = useCallback((word: string) => {
+    navigate({ screen: 'tracing', category: 'words', mode: 'sequence', word });
+  }, [navigate]);
+
   // Update letter case in URL without full navigation
   const updateLetterCase = useCallback((newLetterCase: LetterCase) => {
     setState((currentState) => {
@@ -113,6 +139,8 @@ export function useHashRouter() {
     goToCategory,
     goToMode,
     goToTracing,
+    goToWordInput,
+    goToWordTracing,
     updateLetterCase,
   };
 }

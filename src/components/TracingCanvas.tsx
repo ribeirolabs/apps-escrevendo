@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import { useDrawing } from '../hooks/useDrawing';
 
 interface TracingCanvasProps {
@@ -6,6 +6,7 @@ interface TracingCanvasProps {
   clearTrigger?: number;
   strokeColor?: string;
   showBothCases?: boolean;
+  word?: string;
 }
 
 const CANVAS_WIDTH = 400;
@@ -22,11 +23,35 @@ const GUIDELINE_COLOR = '#d4c4f5';
 const GUIDELINE_DASHED_COLOR = '#e8dff5';
 const LETTER_DOTTED_COLOR = '#c4b5e8';
 
-export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5', showBothCases = false }: TracingCanvasProps) {
+export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5', showBothCases = false, word }: TracingCanvasProps) {
   const guideCanvasRef = useRef<HTMLCanvasElement>(null);
   const drawCanvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
   
-  const canvasWidth = showBothCases ? CANVAS_WIDTH_BOTH : CANVAS_WIDTH;
+  // For words, measure parent container width
+  useEffect(() => {
+    if (!word) {
+      setMeasuredWidth(null);
+      return;
+    }
+    
+    const measure = () => {
+      const parent = containerRef.current?.parentElement;
+      if (parent) {
+        const width = Math.min(parent.clientWidth - 32, 1400);
+        setMeasuredWidth(width);
+      }
+    };
+    
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [word]);
+  
+  const canvasWidth = word 
+    ? (measuredWidth || 800) 
+    : (showBothCases ? CANVAS_WIDTH_BOTH : CANVAS_WIDTH);
 
   const { clearCanvas } = useDrawing(drawCanvasRef, {
     strokeColor,
@@ -76,15 +101,41 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
   }, []);
 
   // Draw dotted letter outline
-  const drawDottedLetter = useCallback((ctx: CanvasRenderingContext2D, char: string, showBoth: boolean, width: number) => {
+  const drawDottedLetter = useCallback((ctx: CanvasRenderingContext2D, char: string, showBoth: boolean, width: number, wordText?: string) => {
     const { fontSize, centerY } = getFontSettings();
 
-    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
-    if (showBoth) {
+    if (wordText) {
+      // Draw the whole word
+      // Calculate font size based on word length to fit
+      const maxFontSize = fontSize * 0.8;
+      const wordLength = wordText.length;
+      const availableWidth = width - 60; // padding
+      
+      // Estimate: each character is roughly 0.6 * fontSize wide
+      const estimatedWidth = wordLength * maxFontSize * 0.6;
+      const scaledFontSize = estimatedWidth > availableWidth 
+        ? maxFontSize * (availableWidth / estimatedWidth)
+        : maxFontSize;
+      
+      ctx.font = `bold ${scaledFontSize}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      
+      // Draw dotted outline
+      ctx.strokeStyle = LETTER_DOTTED_COLOR;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 10]);
+      ctx.strokeText(wordText, width / 2, centerY);
+
+      // Draw light fill for better visibility
+      ctx.fillStyle = 'rgba(228, 218, 245, 0.25)';
+      ctx.fillText(wordText, width / 2, centerY);
+    } else if (showBoth) {
       // Draw both cases side by side with same font size
+      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      
       const upperChar = char.toUpperCase();
       const lowerChar = char.toLowerCase();
       const spacing = width / 4;
@@ -106,6 +157,9 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
       ctx.fillText(lowerChar, width / 2 + spacing, centerY);
     } else {
       // Draw single character centered
+      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+      ctx.textAlign = 'center';
+      
       ctx.strokeStyle = LETTER_DOTTED_COLOR;
       ctx.lineWidth = 3;
       ctx.setLineDash([8, 10]);
@@ -124,9 +178,9 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
     
     if (guideCtx) {
       drawGuidelines(guideCtx, canvasWidth);
-      drawDottedLetter(guideCtx, character, showBothCases, canvasWidth);
+      drawDottedLetter(guideCtx, character, showBothCases, canvasWidth, word);
     }
-  }, [character, showBothCases, canvasWidth, drawGuidelines, drawDottedLetter]);
+  }, [character, showBothCases, canvasWidth, word, drawGuidelines, drawDottedLetter]);
 
   // Clear drawing canvas when clearTrigger changes or character changes
   useEffect(() => {
@@ -135,8 +189,13 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
 
   return (
     <div 
+      ref={containerRef}
       className="relative bg-white rounded-3xl shadow-lg overflow-hidden ring-2 ring-purple-200 transition-all duration-300"
-      style={{ touchAction: 'none' }}
+      style={{ 
+        touchAction: 'none',
+        width: canvasWidth,
+        height: CANVAS_HEIGHT,
+      }}
       onTouchStart={(e) => e.preventDefault()}
       onTouchMove={(e) => e.preventDefault()}
     >
@@ -145,7 +204,7 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
         ref={guideCanvasRef}
         width={canvasWidth}
         height={CANVAS_HEIGHT}
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0"
         style={{ touchAction: 'none' }}
       />
       
@@ -154,7 +213,7 @@ export function TracingCanvas({ character, clearTrigger, strokeColor = '#9b87f5'
         ref={drawCanvasRef}
         width={canvasWidth}
         height={CANVAS_HEIGHT}
-        className="relative w-full h-full cursor-crosshair"
+        className="relative cursor-crosshair"
         style={{ touchAction: 'none' }}
       />
     </div>

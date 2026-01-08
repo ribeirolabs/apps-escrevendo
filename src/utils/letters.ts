@@ -4,7 +4,7 @@ export const NUMBERS = '0123456789'.split('');
 
 export type LetterCase = 'uppercase' | 'lowercase' | 'both';
 export type Mode = 'sequence' | 'random';
-export type Category = 'letters' | 'numbers';
+export type Category = 'letters' | 'numbers' | 'words';
 
 export function getCharacters(category: Category, letterCase: LetterCase): string[] {
   if (category === 'numbers') {

@@ -29,6 +29,13 @@ export function CategorySelection({ onSelect }: CategorySelectionProps) {
         >
           🔢 Números
         </button>
+
+        <button
+          onClick={() => onSelect('words')}
+          className="bg-pastel-blue hover:bg-pastel-purple text-gray-700 font-semibold py-6 px-8 rounded-2xl text-2xl shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
+        >
+          📝 Palavras
+        </button>
       </div>
     </div>
   );

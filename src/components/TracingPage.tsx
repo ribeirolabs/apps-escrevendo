@@ -39,9 +39,10 @@ interface TracingPageProps {
   initialCase: LetterCase;
   onBack: () => void;
   onCaseChange?: (letterCase: LetterCase) => void;
+  word?: string;
 }
 
-export function TracingPage({ category, mode, initialCase, onBack, onCaseChange }: TracingPageProps) {
+export function TracingPage({ category, mode, initialCase, onBack, onCaseChange, word }: TracingPageProps) {
   const [strokeColor, setStrokeColor] = useState('#9b87f5');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { speak, isSpeaking } = useSpeech();
@@ -53,7 +54,7 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange 
     handleNext,
     handleClear,
     handleToggleCase,
-  } = useTracing({ category, mode, initialCase });
+  } = useTracing({ category, mode, initialCase, word });
 
   // Notify parent of case changes for URL update
   useEffect(() => {
@@ -86,12 +87,16 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange 
   }, []);
 
   const handleListen = useCallback(() => {
-    // For letters, just speak the lowercase version to avoid "M maiúsculo"
-    const textToSpeak = category === 'letters' 
-      ? currentCharacter.toLowerCase() 
-      : currentCharacter;
-    speak(textToSpeak);
-  }, [speak, currentCharacter, category]);
+    if (category === 'words' && word) {
+      // For words, speak the whole word
+      speak(word.toLowerCase());
+    } else if (category === 'letters') {
+      // For letters, just speak the lowercase version to avoid "M maiúsculo"
+      speak(currentCharacter.toLowerCase());
+    } else {
+      speak(currentCharacter);
+    }
+  }, [speak, currentCharacter, category, word]);
 
   return (
     <div className="flex flex-col h-screen p-4 pt-safe overflow-hidden">
@@ -130,6 +135,7 @@ export function TracingPage({ category, mode, initialCase, onBack, onCaseChange 
           clearTrigger={clearTrigger}
           strokeColor={strokeColor}
           showBothCases={letterCase === 'both'}
+          word={category === 'words' ? word : undefined}
         />
       </div>
       
